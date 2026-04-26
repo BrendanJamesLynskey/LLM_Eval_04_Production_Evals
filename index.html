@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eval 04 — Production Evals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-card: #0d1117;
+            --bg-code: #161b22;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #76B900;
+            --accent-dim: #76B90044;
+            --accent-glow: #76B90033;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 17px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > * { position: relative; z-index: 1; }
+        .series-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin-bottom: 2rem;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            white-space: nowrap;
+        }
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            max-width: var(--max-width);
+        }
+        .pipeline-step {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .pipeline-arrow { color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+        .slide {
+            min-height: 100vh;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-dim);
+            position: absolute;
+            top: 2rem;
+            right: 1.5rem;
+            line-height: 1;
+            user-select: none;
+        }
+        .slide h2 {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.25;
+        }
+        .slide h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .slide p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .slide p strong { color: var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+        .slide li { margin-bottom: 0.4rem; }
+        .slide li strong { color: var(--text-primary); }
+        .slide code {
+            font-family: var(--font-mono);
+            font-size: 0.88em;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            padding: 0.05rem 0.35rem;
+            border-radius: 3px;
+            color: #c9d1d9;
+        }
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+        }
+        .code-header {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(118, 185, 0, 0.08);
+            padding: 0.4rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .code-block pre { margin: 0; padding: 1rem; overflow-x: auto; }
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .num { color: #79c0ff; }
+        .type { color: #ffa657; }
+        .dir { color: #ff7b72; }
+        .mac { color: #ffa657; }
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            background: var(--bg-code);
+            color: var(--accent);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            white-space: nowrap;
+        }
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        .diagram-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-box {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .diagram-box.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-box.dim { color: var(--text-secondary); border-color: var(--border); }
+        .diagram-arrow { color: var(--accent); font-size: 1.3rem; font-weight: 700; }
+        .diagram-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-vertical .diagram-arrow { font-size: 1.1rem; }
+        .hierarchy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .hierarchy-level { display: flex; align-items: center; gap: 0.75rem; }
+        .hierarchy-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+            text-align: right;
+        }
+        .hierarchy-items { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .hierarchy-item {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .hierarchy-item.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .diagram-panel {
+            padding: 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .diagram-panel.accent-border { border-left: 3px solid var(--accent); }
+        .diagram-panel h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        .diagram-panel p, .diagram-panel ul { font-size: 0.85rem; }
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+        }
+        .callout p { margin-bottom: 0; }
+        .callout p + p { margin-top: 0.5rem; }
+        .callout .callout-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+        .contents-list { list-style: none; padding-left: 0; counter-reset: contents; }
+        .contents-list li {
+            counter-increment: contents;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .contents-list li:last-child { border-bottom: none; }
+        .contents-list li::before {
+            content: counter(contents, decimal-leading-zero);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 2rem;
+        }
+        .contents-list a { color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
+        .contents-list a:hover { color: var(--accent); }
+        .footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .canvas-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .canvas-wrap canvas, .canvas-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            margin-left: 0.3rem;
+        }
+        .badge.ok    { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .badge.warn  { border-color: #ffa657; color: #ffa657; background: rgba(255,166,87,0.08); }
+        .badge.bad   { border-color: #ff7b72; color: #ff7b72; background: rgba(255,123,114,0.08); }
+        @media (max-width: 640px) {
+            .slide { padding: 3rem 1rem; min-height: auto; }
+            .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
+            .slide h2 { font-size: 1.5rem; }
+            .diagram-grid.cols-2, .diagram-grid.cols-3 { grid-template-columns: 1fr; }
+            .pipeline { gap: 0.15rem; }
+            .pipeline-step { font-size: 0.6rem; padding: 0.2rem 0.4rem; }
+            .hero h1 { font-size: 1.8rem; }
+            table { font-size: 0.78rem; }
+        }
+    </style>
+</head>
+<body>
+<header class="hero">
+    <div class="series-label">LLM Evaluations Series &mdash; Presentation 04</div>
+    <h1>Production <span class="accent">Evals</span></h1>
+    <p class="subtitle">Online sampling, drift detection, golden sets, regression CI, sampled human review, feedback loops &mdash; keeping eval signal fresh after your model ships.</p>
+    <div class="tags">
+        <span class="tag">Online Eval</span>
+        <span class="tag">Drift Detection</span>
+        <span class="tag">Golden Sets</span>
+        <span class="tag">Regression CI</span>
+        <span class="tag">Human Review</span>
+        <span class="tag">Feedback Loops</span>
+        <span class="tag">Dashboards</span>
+    </div>
+    <div class="pipeline">
+        <span class="pipeline-step">Sample Traffic</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Score &amp; Store</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Detect Drift</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Human Review</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Golden Set</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Gate Deploy</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Online Eval &mdash; Sampling Production Traffic</a></li>
+        <li><a href="#slide-02">Drift Detection &mdash; Input &amp; Output Distributions</a></li>
+        <li><a href="#slide-03">Golden Sets &mdash; Curating, Versioning, Growing</a></li>
+        <li><a href="#slide-04">Regression CI &mdash; Gating Deploys on Eval Pass</a></li>
+        <li><a href="#slide-05">Sampled Human Review &mdash; Triage and Agreement</a></li>
+        <li><a href="#slide-06">Feedback Loops &mdash; Thumbs Up/Down to Eval Signal</a></li>
+        <li><a href="#slide-07">Eval Observability &mdash; Dashboards &amp; Alerts</a></li>
+        <li><a href="#slide-08">Cost Models for Continuous Eval</a></li>
+        <li><a href="#slide-09">What to Take Away</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Online Eval &mdash; Sampling Production Traffic</h2>
+    <p>You cannot score every production request &mdash; inference cost, latency budget, and annotation throughput all prevent exhaustive eval. The goal is a <strong>statistically representative sample</strong> that gives you signal on tail failures without dominating your budget.</p>
+
+    <h3>Sampling strategies</h3>
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Uniform random</h4>
+            <p>Score every k-th request. Simple, cheap, unbiased. Fails to catch rare tail events at reasonable sample rates. At 1&nbsp;% sample rate on 100&thinsp;000 req/day = 1&thinsp;000 scored/day. Works for monitoring average quality.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Stratified</h4>
+            <p>Maintain sampling buckets per topic, user tier, or language. Oversample rare categories to ensure minimum representation. Prevents dominant categories from drowning out long-tail failures.</p>
+        </div>
+    </div>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Uncertainty-based</h4>
+            <p>Score requests where a cheap proxy signal suggests high uncertainty: low log-prob on output, high perplexity, long response with many hedge words, or classifier confidence &lt; 0.7. Focus expensive eval resources on the requests most likely to be wrong.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Trigger-based</h4>
+            <p>Always score requests matching policy-relevant patterns: contains PII, exceeds 2&thinsp;000 output tokens, customer tier = enterprise, topic = medical / legal / financial. These are the requests where mistakes cost most.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Async scoring pipeline</div>
+        <p>Route sampled requests to a <strong>scoring queue</strong> (e.g. SQS, Pub/Sub, or Redis Stream) immediately after the response is served. Judge workers consume from the queue asynchronously. This decouples scoring latency from serving latency. Budget for a scoring queue depth that can absorb 2&times; peak traffic without blocking.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Drift Detection &mdash; Input &amp; Output Distributions</h2>
+    <p>Distribution drift is the silent quality killer. No model change happened, no deploy occurred &mdash; yet user query distribution shifted and your quality metrics degraded. You won't see it without monitoring both the input and output distributions.</p>
+
+    <h3>Input drift signals</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Signal</th><th>Measurement</th><th>Alert threshold</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Topic distribution</td>
+                    <td>Embed queries weekly; KL divergence vs baseline embedding histogram</td>
+                    <td>KL &gt; 0.3 vs 30-day rolling baseline</td>
+                </tr>
+                <tr>
+                    <td>Query length</td>
+                    <td>P50, P95 token count; two-sample KS test vs baseline</td>
+                    <td>KS p-value &lt; 0.01 on 7-day window</td>
+                </tr>
+                <tr>
+                    <td>Language mix</td>
+                    <td>langdetect classifier; daily histogram</td>
+                    <td>Any language &gt;2&times; baseline share for 3 days running</td>
+                </tr>
+                <tr>
+                    <td>Novel entities / jargon</td>
+                    <td>OOV rate against a rolling vocabulary; spike detection</td>
+                    <td>OOV &gt; 5&nbsp;% of tokens in any 1-hour window</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Output drift signals</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Signal</th><th>Measurement</th><th>Alert threshold</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Refusal rate</td>
+                    <td>Fast classifier; daily rolling mean</td>
+                    <td>&plusmn;2&nbsp;pp vs 14-day baseline (absolute)</td>
+                </tr>
+                <tr>
+                    <td>Hallucination rate</td>
+                    <td>LLM judge on sampled RAG responses</td>
+                    <td>&gt;5&nbsp;% absolute increase vs baseline</td>
+                </tr>
+                <tr>
+                    <td>Output length</td>
+                    <td>P50 tokens; anomaly detection (3&sigma;)</td>
+                    <td>3&sigma; spike for 2+ consecutive hours</td>
+                </tr>
+                <tr>
+                    <td>Toxicity rate</td>
+                    <td>Detoxify or Perspective API on sampled outputs</td>
+                    <td>Any increase above floor &rarr; immediate alert</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Embedding-based drift detection</div>
+        <p>Embed 1&thinsp;000 input queries per day into a fixed-dimensional space (e.g. <code>text-embedding-3-small</code> at 1&thinsp;536 dims). Reduce to 2D with UMAP for visualisation; use Maximum Mean Discrepancy (MMD) or KL divergence on the binned histogram for alerting. Tools: <code>evidently</code> library for automated drift reports, or custom MMD via <code>scipy</code>.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Golden Sets &mdash; Curating, Versioning, Growing</h2>
+    <p>A golden set is your ground truth: a fixed, annotated corpus of (prompt, expected_quality) pairs against which every model version is regression-tested. It is the most valuable artefact your eval programme produces.</p>
+
+    <div class="code-block">
+        <div class="code-header">golden_set_schema.py &mdash; file format convention</div>
+<pre><code><span class="cm"># Each line in golden_set_v4.2.jsonl</span>
+{
+  <span class="str">"id"</span>:          <span class="str">"gs-00a3f9"</span>,           <span class="cm"># stable, never reused</span>
+  <span class="str">"version_added"</span>: <span class="str">"v4.0"</span>,             <span class="cm"># golden-set release that added this item</span>
+  <span class="str">"category"</span>:    <span class="str">"rag_summarisation"</span>,
+  <span class="str">"split"</span>:       <span class="str">"test"</span>,              <span class="cm"># "dev" or "test"</span>
+  <span class="str">"prompt"</span>:      <span class="str">"..."</span>,               <span class="cm"># full prompt including system prompt</span>
+  <span class="str">"reference"</span>:   <span class="str">"..."</span>,               <span class="cm"># gold answer or rubric</span>
+  <span class="str">"human_score"</span>: <span class="num">4</span>,                   <span class="cm"># 1-5 from annotator</span>
+  <span class="str">"annotator"</span>:   <span class="str">"a12"</span>,
+  <span class="str">"tags"</span>:        [<span class="str">"long-context"</span>, <span class="str">"en"</span>],
+  <span class="str">"deprecated"</span>:  <span class="kw">false</span>,
+  <span class="str">"deprecation_reason"</span>: <span class="kw">null</span>
+}</code></pre>
+    </div>
+
+    <h3>Growth cadence</h3>
+    <ul>
+        <li><strong>Weekly:</strong> promote 10&ndash;20 items from sampled human review to the golden set (those that reveal new failure modes or cover underrepresented categories).</li>
+        <li><strong>Monthly:</strong> quarterly review of deprecated items; rebalance category distribution; add adversarial items from red-team session.</li>
+        <li><strong>Never delete</strong> &mdash; mark items <code>deprecated: true</code> with a reason. Deprecated items stay in the file and can be reactivated. Deletion loses the failure history.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">The contamination fence</div>
+        <p>The golden-set file must <strong>never appear in training data</strong>. Enforce this by storing it in a separate repo with no training pipeline access, and by hashing every item and running a dedup check before any fine-tuning data preparation job. If contamination occurs, the golden-set scores will artificially inflate and your regression gate becomes worthless.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Regression CI &mdash; Gating Deploys on Eval Pass</h2>
+    <p>Regression CI runs your golden-set eval on every candidate model before it reaches production. The gate is: <em>all category scores must be within tolerance of the current production baseline</em>.</p>
+
+    <div class="code-block">
+        <div class="code-header">ci_eval_gate.py &mdash; GitHub Actions example</div>
+<pre><code><span class="cm"># .github/workflows/eval_gate.yml (excerpt)</span>
+<span class="type">jobs</span><span class="kw">:</span>
+  <span class="type">eval-gate</span><span class="kw">:</span>
+    <span class="type">runs-on</span><span class="kw">:</span> <span class="str">ubuntu-latest</span>
+    <span class="type">steps</span><span class="kw">:</span>
+      - <span class="type">name</span><span class="kw">:</span> <span class="str">Run golden-set eval</span>
+        <span class="type">run</span><span class="kw">:</span> |
+          python ci/run_eval.py \
+            --golden-set golden_set_v4.2.jsonl \
+            --model <span class="str">"${{ env.CANDIDATE_MODEL }}"</span> \
+            --baseline-scores baselines/prod_v4.1.json \
+            --tolerance 0.02 \
+            --fail-on-regression</code></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-header">ci/run_eval.py &mdash; regression check logic</div>
+<pre><code><span class="kw">def</span> <span class="fn">check_regression</span>(candidate: <span class="type">dict</span>, baseline: <span class="type">dict</span>, tol: <span class="type">float</span>) -&gt; <span class="type">list</span>[<span class="type">str</span>]:
+    failures = []
+    <span class="kw">for</span> category, baseline_score <span class="kw">in</span> baseline.<span class="fn">items</span>():
+        cand_score = candidate.<span class="fn">get</span>(category, <span class="num">0.0</span>)
+        <span class="kw">if</span> cand_score &lt; baseline_score - tol:
+            failures.<span class="fn">append</span>(
+                f<span class="str">"{category}: {cand_score:.3f} &lt; {baseline_score:.3f} - {tol}"</span>
+            )
+    <span class="kw">return</span> failures  <span class="cm"># empty = pass</span></code></pre>
+    </div>
+
+    <h3>Gate configuration</h3>
+    <ul>
+        <li><strong>Tolerance per category</strong> &mdash; tighter for safety-adjacent categories (refusal, toxicity: &plusmn;0.5&nbsp;%); looser for style (summarisation length: &plusmn;5&nbsp;%).</li>
+        <li><strong>Baseline anchoring</strong> &mdash; the baseline is the <em>current production model's scores</em>, not a historical best. Ratchet baseline upward only on deliberate improvement; never ratchet down.</li>
+        <li><strong>Soft vs hard gate</strong> &mdash; regressions of &lt;1&nbsp;pp generate a warning; &gt;2&nbsp;pp block the deploy; &gt;5&nbsp;pp on any safety category page on-call immediately.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Sampled Human Review &mdash; Triage and Agreement</h2>
+    <p>Human review closes the loop that automated evals cannot close: it catches systematic judge biases, surfaces qualitatively novel failure modes, and provides the ground truth used to calibrate and retrain judge models.</p>
+
+    <h3>Weekly review workflow</h3>
+    <div class="diagram-flow">
+        <div class="diagram-box accent">Sample 200 items<br><small>stratified from weekly traffic</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Auto-filter<br><small>remove duplicates, PII</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Priority sort<br><small>uncertain judge scores first</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">Dual annotate<br><small>20% of items by 2 reviewers</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Score + notes<br><small>1&ndash;5 Likert + failure tag</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box">IAA check<br><small>&kappa; &ge; 0.7 or re-calibrate</small></div>
+    </div>
+
+    <h3>Annotation taxonomy</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Failure tag</th><th>Definition</th><th>Routing action</th></tr></thead>
+            <tbody>
+                <tr><td><code>hallucination</code></td><td>Model asserts false factual claim with confidence</td><td>Add to golden set; escalate if rate &gt; 3&nbsp;%</td></tr>
+                <tr><td><code>over_refusal</code></td><td>Safe benign request refused</td><td>Add to golden set; tune refusal threshold</td></tr>
+                <tr><td><code>instruction_ignore</code></td><td>System prompt constraint violated</td><td>Escalate to model team immediately</td></tr>
+                <tr><td><code>format_error</code></td><td>Correct content, wrong structure (markdown, JSON, etc.)</td><td>Add test case to CI eval</td></tr>
+                <tr><td><code>tone_mismatch</code></td><td>Correct content, wrong register for context</td><td>Add to style rubric; refine judge prompt</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Inter-annotator agreement (IAA)</div>
+        <p>Cohen's &kappa; &ge; 0.7 is the minimum bar before you trust the annotation. If &kappa; falls below 0.6 on a category, run a calibration session: annotators jointly review 20 items, discuss disagreements, and update the rubric. Low IAA almost always indicates a vague rubric, not inherently subjective content.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Feedback Loops &mdash; Thumbs Up/Down to Eval Signal</h2>
+    <p>Implicit user feedback is the highest-volume signal you have. Converting it into structured eval data requires careful denoising &mdash; raw thumbs-down data is noisy and biased toward edge cases.</p>
+
+    <div class="canvas-wrap">
+        <svg viewBox="0 0 720 240" width="720" height="240" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                .fb { fill: #161b22; stroke: #30363d; stroke-width: 1; }
+                .fbg { fill: rgba(118,185,0,0.08); stroke: #76B900; stroke-width: 1.5; }
+                .tl { fill: #e6edf3; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; }
+                .sl { fill: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+                .ar { stroke: #76B900; stroke-width: 1.5; fill: none; marker-end: url(#fba); }
+                .ar2 { stroke: #ffa657; stroke-width: 1; fill: none; stroke-dasharray: 4 3; marker-end: url(#fbb); }
+            </style>
+            <defs>
+                <marker id="fba" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#76B900"/>
+                </marker>
+                <marker id="fbb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffa657"/>
+                </marker>
+            </defs>
+
+            <rect x="10"  y="90"  width="120" height="55" rx="4" class="fbg"/>
+            <text x="20"  y="113" class="tl">User feedback</text>
+            <text x="20"  y="132" class="sl">thumbs up / down</text>
+
+            <path d="M 130 117 L 180 117" class="ar"/>
+
+            <rect x="180" y="90"  width="120" height="55" rx="4" class="fb"/>
+            <text x="190" y="113" class="tl">Denoiser</text>
+            <text x="190" y="132" class="sl">filter spam, bots</text>
+
+            <path d="M 300 117 L 350 117" class="ar"/>
+
+            <rect x="350" y="90"  width="120" height="55" rx="4" class="fb"/>
+            <text x="360" y="113" class="tl">Triage</text>
+            <text x="360" y="132" class="sl">negatives sampled</text>
+
+            <path d="M 470 117 L 520 117" class="ar"/>
+
+            <rect x="520" y="90"  width="120" height="55" rx="4" class="fbg"/>
+            <text x="530" y="113" class="tl">Human review</text>
+            <text x="530" y="132" class="sl">confirm + tag</text>
+
+            <path d="M 580 145 L 580 200 L 70 200 L 70 145" class="ar2"/>
+            <text x="270" y="215" class="sl" style="fill:#ffa657">confirmed failures &rarr; golden set</text>
+
+            <text x="10" y="25" class="tl" style="fill:#76B900">Feedback loop: thumbs-down &rarr; golden-set item in ~3 days</text>
+        </svg>
+    </div>
+
+    <h3>Noise sources in thumbs-down data</h3>
+    <ul>
+        <li><strong>Frustration clicks</strong> &mdash; users rate down the model when the system was slow, even if the response was good. Correlate thumbs-down rate with latency percentiles.</li>
+        <li><strong>Preference vs quality</strong> &mdash; user disagreed with model opinion; response was high-quality but unwanted. These should be tagged separately from quality failures.</li>
+        <li><strong>Prompt ambiguity</strong> &mdash; the prompt was underspecified; no model could answer it correctly. Filter by prompt clarity score before adding to golden set.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Conversion rate target</div>
+        <p>Well-designed feedback pipelines convert roughly <strong>15&ndash;30&nbsp;%</strong> of thumbs-down events into confirmed eval items. The rest are noise (latency frustration, preference disagreements, ambiguous prompts). If your conversion rate is &gt;50&nbsp;%, your triage criteria are too permissive. If &lt;10&nbsp;%, your denoising is too aggressive and you are missing real failures.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Eval Observability &mdash; Dashboards &amp; Alerts</h2>
+    <p>Eval data is only useful if it is visible. A well-designed dashboard gives on-call engineers a 30-second read on system health and a 5-minute drill path to root cause.</p>
+
+    <h3>Recommended dashboard panels</h3>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Quality scorecard</h4>
+            <p>Daily rolling average of LLM judge scores per category. Colour-coded: green (&gt;baseline), yellow (&minus;1&ndash;2&nbsp;pp), red (&minus;&gt;2&nbsp;pp). Single-number headline + sparkline per category.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Drift monitor</h4>
+            <p>Input embedding KL divergence vs 30-day baseline. Query length P50/P95. Language mix histogram. Output length P95. Refusal rate 7-day rolling. All on a single timeline.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>Feedback funnel</h4>
+            <p>Daily thumbs-down events &rarr; denoised negatives &rarr; human-reviewed items &rarr; golden-set additions. Conversion rate trend. Annotator queue depth (backlog health).</p>
+        </div>
+    </div>
+
+    <h3>Alert runbook (minimum viable)</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Alert</th><th>Trigger</th><th>Owner</th><th>SLA</th></tr></thead>
+            <tbody>
+                <tr><td>Quality regression</td><td>Any category &gt;2&nbsp;pp drop vs baseline for 2 consecutive hours</td><td>On-call ML engineer</td><td>Investigate within 1 hour</td></tr>
+                <tr><td>Safety metric spike</td><td>Toxicity or refusal rate crosses floor</td><td>Safety team</td><td>Page immediately</td></tr>
+                <tr><td>Input drift</td><td>KL &gt; 0.3 vs baseline</td><td>ML ops</td><td>Investigate within 4 hours</td></tr>
+                <tr><td>Scoring queue backlog</td><td>Queue depth &gt; 2&times; 1-hour throughput</td><td>Infra on-call</td><td>Scale workers within 30 min</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Cost Models for Continuous Eval</h2>
+    <p>Production eval has four cost levers: sample rate, judge model tier, human review headcount, and scoring frequency. Model these explicitly before committing to a continuous eval cadence.</p>
+
+    <div class="code-block">
+        <div class="code-header">eval_cost_model.py &mdash; monthly estimate</div>
+<pre><code><span class="cm"># Inputs</span>
+daily_requests       = <span class="num">100_000</span>
+sample_rate          = <span class="num">0.01</span>           <span class="cm"># 1%</span>
+judge_input_tokens   = <span class="num">800</span>            <span class="cm"># system + prompt + response</span>
+judge_output_tokens  = <span class="num">200</span>            <span class="cm"># score + rationale</span>
+judge_cost_per_1k_in = <span class="num">0.003</span>         <span class="cm"># Claude 3.5 Sonnet</span>
+judge_cost_per_1k_out= <span class="num">0.015</span>
+human_items_per_week = <span class="num">200</span>
+human_cost_per_item  = <span class="num">0.25</span>          <span class="cm"># trained annotator (USD)</span>
+
+<span class="cm"># Monthly judge cost</span>
+scored_per_day   = daily_requests * sample_rate      <span class="cm"># 1000</span>
+judge_in_cost    = (scored_per_day * <span class="num">30</span> * judge_input_tokens / <span class="num">1000</span>) * judge_cost_per_1k_in
+judge_out_cost   = (scored_per_day * <span class="num">30</span> * judge_output_tokens / <span class="num">1000</span>) * judge_cost_per_1k_out
+human_cost_month = human_items_per_week * <span class="num">4.3</span> * human_cost_per_item
+
+<span class="cm"># Results: ~$72 judge + ~$215 human = $287/month</span>
+<span class="kw">print</span>(f<span class="str">"Judge: ${judge_in_cost+judge_out_cost:.0f}/month"</span>)
+<span class="kw">print</span>(f<span class="str">"Human: ${human_cost_month:.0f}/month"</span>)
+<span class="kw">print</span>(f<span class="str">"Total: ${judge_in_cost+judge_out_cost+human_cost_month:.0f}/month"</span>)</code></pre>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Cost scaling chart</div>
+        <p>At 1&nbsp;M req/day: same 1&nbsp;% sample = 10&thinsp;000 scored/day = ~$720/month judge + same human cost. If this is too high: drop to 0.3&nbsp;% sample on normal traffic + 10&nbsp;% on trigger-flagged traffic. Use the batch API for 50&nbsp;% discount on Anthropic models. Cache identical prompts in the scoring queue to avoid re-scoring duplicates (common in chatbot UX where users retry the same question).</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>What to Take Away</h2>
+    <ul>
+        <li><strong>Sample, don't score everything.</strong> 1&ndash;2&nbsp;% uniform + trigger-based oversampling for high-stakes categories is a practical starting point. Route through an async scoring queue.</li>
+        <li><strong>Monitor both input and output distributions.</strong> KL divergence on embeddings for input; refusal rate, hallucination rate, and output length for output. Alert on &gt;0.3 KL and &gt;2&nbsp;pp score shifts.</li>
+        <li><strong>Golden sets are the crown jewel.</strong> Never contaminate them with training data. Version every release. Grow weekly from human review. Never delete &mdash; deprecate.</li>
+        <li><strong>Regression CI gates deploys.</strong> Tolerance &plusmn;2&nbsp;pp per category; tighter for safety. Anchor baseline to current production model, not a historical best.</li>
+        <li><strong>Human review converts 15&ndash;30&nbsp;% of negatives.</strong> Filter noise (latency frustration, preference disagreement). IAA &kappa; &ge; 0.7 before trusting labels.</li>
+        <li><strong>Dashboards need 30-second read time.</strong> Quality scorecard, drift monitor, feedback funnel on one page. Alert runbook with named owners and SLAs.</li>
+        <li><strong>Budget explicitly.</strong> $300&ndash;$500/month is achievable at 100K req/day with 1&nbsp;% sample, Sonnet judge, and 200 human items/week.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Where to next</div>
+        <p>Deck 05 covers red-teaming: threat modelling, manual and automated red teams, HarmBench, AdvBench, PAIR, JailbreakBench, and building an internal red-team practice that feeds back into production eval.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Evaluations">LLM Evaluations sub-hub</a></p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;"><a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Evaluations">Back to Series Index</a></p>
+</footer>
+<script>
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.style.opacity = '0';
+        slide.style.transform = 'translateY(30px)';
+        slide.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(slide);
+    });
+</script>
+</body>
+</html>
