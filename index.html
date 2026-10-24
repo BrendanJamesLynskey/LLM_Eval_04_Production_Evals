@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-concept="exam" lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -399,9 +399,53 @@
     /* deck-mobile-fix:hero */ .hero{overflow:hidden}@supports (overflow-x:clip){.hero{overflow:visible;overflow-x:clip}}
     /* deck-mobile-fix:phone */ @media (max-width:640px){.diagram-box,.tier-fill,.section-divider>span,.action-btn{white-space:normal;overflow-wrap:anywhere}.diagram-grid>*,.diagram-panel,.diagram-box,.code-block,.callout,.metric,.control-group,.control-row>*,.pipeline-body,.roll-track>*,.tier-fill,.timeline-row>*{min-width:0;max-width:100%}p,li,a,code,td,th,.callout,.diagram-panel{overflow-wrap:break-word}pre{max-width:100%;overflow-x:auto}table{display:block;max-width:100%;overflow-x:auto}.katex-display,.bits,.canvas-wrap,.influence-map-wrapper,.timeline-track,div:has(>.bank-cell){max-width:100%;overflow-x:auto;overflow-y:hidden}select,input,img,video,iframe,.action-btn{max-width:100%}canvas{max-width:100%;height:auto}}
     </style>
+<style id="deck-concept">@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
+html[data-concept=exam] .hero{min-height:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);column-gap:2.75rem;align-items:start;align-content:start;justify-items:start;text-align:left;max-width:1180px;margin:0 auto;padding:2rem 1.75rem 3.5rem}
+html[data-concept=exam] .hero::before,html[data-concept=exam] .hero::after{display:none}
+html[data-concept=exam] .hero>*{grid-column:1;margin-left:0;margin-right:0}
+html[data-concept=exam] .hero .series-label{display:none}
+html[data-concept=exam] .cx-head{grid-column:1/-1;width:100%;display:flex;justify-content:space-between;gap:1rem;font-family:var(--font-mono);font-size:.8rem;color:var(--text-secondary);border-bottom:1px solid var(--border);padding-bottom:.5rem;margin-bottom:2.25rem}
+html[data-concept=exam] .cx-head span:first-child{color:var(--text-primary)}
+html[data-concept=exam] .hero h1{font-size:clamp(2rem,4.3vw,3.2rem);line-height:1.08;letter-spacing:-.015em;margin-bottom:1rem}
+html[data-concept=exam] .hero h1 .accent{color:var(--accent)}
+html[data-concept=exam] .hero .subtitle{max-width:none;margin-bottom:1.5rem}
+html[data-concept=exam] .hero .tags{justify-content:flex-start;gap:.25rem 1rem;margin-bottom:1.25rem}
+html[data-concept=exam] .tag{background:none;border:0;border-radius:0;padding:0;color:var(--text-primary);font-family:var(--font-mono);font-size:.8rem}
+html[data-concept=exam] .hero .tag::before{content:'✓\00a0';color:var(--accent)}
+html[data-concept=exam] .hero .pipeline{justify-content:flex-start;margin-bottom:0}
+html[data-concept=exam] .pipeline-step{background:none;border:0;border-radius:0;padding:0;color:var(--text-secondary);font-family:var(--font-mono);font-size:.78rem}
+html[data-concept=exam] .cx-fig{grid-column:2;grid-row:2/span 6;width:100%;margin:0}
+html[data-concept=exam] .cx-fig figcaption{font-size:.88rem;line-height:1.5;color:var(--text-secondary);margin-top:.55rem}
+html[data-concept=exam] .concept-art{display:block;width:100%;height:auto;overflow:hidden}
+html[data-concept=exam] .slide-number{font-family:var(--font-mono);font-size:.78rem;font-weight:400;color:var(--text-secondary);top:4.4rem;right:1.5rem}
+html[data-concept=exam] .slide-number::before{content:'Q'}
+html[data-concept=exam] .slide h2{color:var(--text-primary);padding-right:3.5rem}
+html[data-concept=exam] .slide h2::after{content:'';display:block;width:4rem;height:3px;margin-top:.55rem;background:#e05a4a}
+html[data-concept=exam] .callout .callout-label,html[data-concept=exam] .metric .metric-label{text-transform:none;letter-spacing:0;font-size:.82rem}
+html[data-concept=exam] .callout,html[data-concept=exam] .diagram-grid,html[data-concept=exam] .canvas-wrap,html[data-concept=exam] .control-panel,html[data-concept=exam] .diagram-panel,html[data-concept=exam] .metric,html[data-concept=exam] .btn,html[data-concept=exam] .tag{border-radius:2px}
+@media (max-width:820px){
+ html[data-concept=exam] .hero{grid-template-columns:minmax(0,1fr);padding:1.25rem 1rem 2.5rem}
+ html[data-concept=exam] .cx-fig{grid-column:1;grid-row:auto;order:10;margin-top:1.5rem}
+}
+
+html[data-concept=exam] .concept-art{filter:drop-shadow(0 10px 20px rgba(0,0,0,.4))}
+html[data-concept=exam] .concept-art .ex-paper{fill:#fbfaf5}
+html[data-concept=exam] .concept-art .ex-rule{stroke:#bcd2e6;stroke-width:.7}
+html[data-concept=exam] .concept-art .ex-margin{stroke:#e2a3a3;stroke-width:1.2}
+html[data-concept=exam] .concept-art .ex-box{fill:none;stroke:#c8322a;stroke-width:1.6}
+html[data-concept=exam] .concept-art .ex-line{fill:none;stroke:#c8322a;stroke-width:2}
+html[data-concept=exam] .concept-art .ex-dot{fill:#c8322a}
+html[data-concept=exam] .concept-art text{font-family:var(--font-mono);fill:#20262c;font-size:10px}
+html[data-concept=exam] .concept-art .ex-q{font-weight:600}
+html[data-concept=exam] .concept-art .ex-mark,html[data-concept=exam] .concept-art .ex-score,html[data-concept=exam] .concept-art .ex-note{font-family:'Caveat',cursive;fill:#c8322a}
+html[data-concept=exam] .concept-art .ex-mark{font-size:22px}
+html[data-concept=exam] .concept-art .ex-score{font-size:24px}
+html[data-concept=exam] .concept-art .ex-note{font-size:14px}
+</style>
 </head>
 <body>
 <header class="hero">
+<!-- deck-concept:start --><div class="cx-head" aria-hidden="true"><span>LLM evaluation</span><span>Paper 04</span></div><figure class="cx-fig"><svg class="concept-art" viewBox="0 0 440 300" role="img" aria-label="Scores tracked across releases" xmlns="http://www.w3.org/2000/svg"><rect class="ex-paper" width="440" height="300"/><line class="ex-margin" x1="60" x2="60" y1="0" y2="300"/><line class="ex-rule" x1="0" x2="440" y1="44" y2="44"/><line class="ex-rule" x1="0" x2="440" y1="66" y2="66"/><line class="ex-rule" x1="0" x2="440" y1="88" y2="88"/><line class="ex-rule" x1="0" x2="440" y1="110" y2="110"/><line class="ex-rule" x1="0" x2="440" y1="132" y2="132"/><line class="ex-rule" x1="0" x2="440" y1="154" y2="154"/><line class="ex-rule" x1="0" x2="440" y1="176" y2="176"/><line class="ex-rule" x1="0" x2="440" y1="198" y2="198"/><line class="ex-rule" x1="0" x2="440" y1="220" y2="220"/><line class="ex-rule" x1="0" x2="440" y1="242" y2="242"/><line class="ex-rule" x1="0" x2="440" y1="264" y2="264"/><line class="ex-rule" x1="0" x2="440" y1="286" y2="286"/><text class="ex-q" x="20" y="62">Q</text><text class="ex-a" x="70" y="62">online: sample live traffic</text><text class="ex-q" x="20" y="106">Q</text><text class="ex-a" x="70" y="106">offline: regression suite</text><rect class="ex-box" x="340" y="226" width="80" height="54"/><text class="ex-score" x="380" y="262" text-anchor="middle">↑</text><path class="ex-line" d="M80 220 L140 200 L200 206 L260 170 L320 176 L380 150"/><circle class="ex-dot" cx="80" cy="220" r="3"/><circle class="ex-dot" cx="140" cy="200" r="3"/><circle class="ex-dot" cx="200" cy="206" r="3"/><circle class="ex-dot" cx="260" cy="170" r="3"/><circle class="ex-dot" cx="320" cy="176" r="3"/><circle class="ex-dot" cx="380" cy="150" r="3"/><text class="ex-note" x="80" y="244">v1    v2    v3    v4    v5    v6</text></svg><figcaption>Production evals never finish marking: sample live traffic, rerun the suite on every release, watch the trend.</figcaption></figure><!-- deck-concept:end -->
     <div class="series-label">LLM Evaluations Series &mdash; Presentation 04</div>
     <h1>Production <span class="accent">Evals</span></h1>
     <p class="subtitle">Online sampling, drift detection, golden sets, regression CI, sampled human review, feedback loops &mdash; keeping eval signal fresh after your model ships.</p>
